@@ -1,11 +1,18 @@
-ENTRY(_start)
+KERNEL_VMA = 1M;
+
+ENTRY(bootstrap)
 SECTIONS
 {
 	. = KERNEL_VMA;
 
-	.text : AT(ADDR(.txt) - KERNEL_VMA)
+	.boot : AT(ADDR(.boot) - KERNEL_VMA)
 	{
-		_code = .;
+		*(.multiboot_header)
+	}
+
+	.text : AT(ADDR(.text) - KERNEL_VMA)
+	{
+		code = .;
 		*(.text)
 		*(.rodata)
 		. = ALIGN(4096);
@@ -13,21 +20,21 @@ SECTIONS
 
 	.data : AT(ADDR(.data) - KERNEL_VMA)
 	{
-		_data = .;
+		data = .;
 		*(.data)
 		. = ALIGN(4096);
 	}
 
 	.bss : AT(ADDR(.bss) - KERNEL_VMA)
 	{
-		_bss = .;
+		bss = .;
 		*(.bss)
 
 		*(COMMON)
 		. = ALIGN(4096);
 	}
 
-	_end = .;
+	end = .;
 
 	/DISCARD/ :
 	{
