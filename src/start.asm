@@ -131,7 +131,11 @@ bootstrap64:
 	mov gs, ax
 	mov ss, ax
 
-	mov esp, _sys_stack
+	mov rsp, _sys_stack
+
+	push rbp
+	mov rbp, rsp
+	sub rsp, 16
 
 	extern rust_main
 	call rust_main

@@ -29,15 +29,16 @@ obj/start.o: obj
 	@nasm -f elf64 -o obj/start.o src/start.asm
 
 $(KERNEL_LIB_PATH): obj
-	@RUST_TARGET_PATH="$(shell pwd)" xargo build --target x86_64-kernel
+	@RUST_TARGET_PATH="$(shell pwd)" cargo xbuild --target x86_64-kernel.json
 
+# TODO: Look at guestfish instead of mounting
 disk.img: format_disk install_grub install unloopback
 
 install_grub: mount
 	@sudo grub-install --boot-directory=$(MOUNT_DIR) --target=i386-pc $(LOOPDEV)
 	@sudo cp scripts/grub.cfg $(MOUNT_DIR)/grub/grub.cfg
 
-create_disk:
+create_disk: umount unloopback
 	@dd status=none if=/dev/zero of=disk.img bs=1M count=100
 	@sfdisk --quiet disk.img < scripts/partitions.sfdisk
 
@@ -45,7 +46,7 @@ format_disk: loopback
 	@sudo mkfs.vfat /dev/loop0p1
 
 run: disk.img
-	@qemu -drive file=disk.img,format=raw
+	@qemu -drive file=disk.img,format=raw -s -S
 
 loopback: create_disk
 	@sudo losetup -f -P disk.img
@@ -54,7 +55,6 @@ unloopback: umount
 	@if [ ! -z $(LOOPDEV) ]; then sudo losetup -D $(LOOPDEV); fi
 
 mount: loopback
-	# FIXME: Don't hardcode this
 	@mkdir $(MOUNT_DIR)
 	@sudo mount -o sync $(LOOPDEV)p1 $(MOUNT_DIR)
 
